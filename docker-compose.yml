@@ -1,0 +1,44 @@
+name: ai-preparation
+
+services:
+  mcp:
+    build:
+      context: .
+      dockerfile: lesson_5_docker/Dockerfile.mcp
+    environment:
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: "8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import socket; connection = socket.create_connection(('127.0.0.1', 8000), 2); connection.close()"
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  api:
+    build:
+      context: .
+      dockerfile: lesson_5_docker/Dockerfile.api
+    environment:
+      MCP_URL: http://mcp:8000/mcp
+    volumes:
+      - ./.env:/app/.env:ro
+    ports:
+      - "8001:8001"
+    depends_on:
+      mcp:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=2)"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s

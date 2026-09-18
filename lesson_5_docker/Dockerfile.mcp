@@ -1,0 +1,31 @@
+# syntax=docker/dockerfile:1
+
+FROM python:3.13-slim AS builder
+
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /build
+COPY lesson_5_docker/mcp-requirements.txt .
+RUN python -m venv /opt/venv \
+    && /opt/venv/bin/pip install --upgrade pip \
+    && /opt/venv/bin/pip install -r mcp-requirements.txt
+
+
+FROM python:3.13-slim AS runtime
+
+ENV PATH="/opt/venv/bin:$PATH" \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+RUN groupadd --gid 10001 app \
+    && useradd --uid 10001 --gid app --no-log-init --create-home app
+
+WORKDIR /app
+COPY --from=builder /opt/venv /opt/venv
+COPY --chown=app:app order_mcp_server.py .
+
+USER app
+EXPOSE 8000
+
+CMD ["python", "order_mcp_server.py"]

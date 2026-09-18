@@ -7,6 +7,8 @@ non-empty `OPENAI_API_KEY`. Then use two terminals:
 python order_mcp_server.py
 ```
 
+
+
 ```bash
 uvicorn lesson_4_app.app.main:app --reload --port 8001
 ```
